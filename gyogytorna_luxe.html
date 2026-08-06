@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gyógytorna Időzítő — Privát Stúdió</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500;1,600&family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg-0:#08080a;
+            --bg-1:#111114;
+            --panel:#141418;
+            --panel-2:#1a1a1f;
+            --hair:#3a3226;
+            --gold:#c8a24d;
+            --gold-hi:#f0d38a;
+            --gold-dim:#8a713a;
+            --silver:#b9bdc6;
+            --silver-dim:#6b6e76;
+            --ivory:#f4f0e8;
+            --muted:#9a958c;
+        }
+        *{ box-sizing:border-box; }
+        html,body{ background:var(--bg-0); }
+        body{
+            font-family:'Jost', sans-serif;
+            color:var(--ivory);
+            background:
+                radial-gradient(ellipse 900px 500px at 50% -10%, rgba(200,162,77,0.14), transparent 60%),
+                radial-gradient(ellipse 700px 500px at 100% 100%, rgba(185,189,198,0.06), transparent 60%),
+                linear-gradient(180deg, var(--bg-0), var(--bg-1) 45%, var(--bg-0));
+            min-height:100vh;
+        }
+        .serif{ font-family:'Cormorant Garamond', serif; }
+        .tracked{ letter-spacing:0.22em; }
+        .tracked-lg{ letter-spacing:0.32em; }
+
+        .gold-text{
+            background:linear-gradient(120deg, var(--gold-dim), var(--gold-hi) 45%, var(--gold) 75%);
+            -webkit-background-clip:text;
+            background-clip:text;
+            color:transparent;
+        }
+
+        .hairline{
+            height:1px;
+            background:linear-gradient(90deg, transparent, var(--hair), transparent);
+        }
+        .hairline-solid{
+            height:1px;
+            background:linear-gradient(90deg, transparent, var(--gold-dim) 20%, var(--gold) 50%, var(--gold-dim) 80%, transparent);
+            opacity:0.55;
+        }
+
+        .luxe-card{
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0) 30%),
+                var(--panel);
+            border:1px solid var(--hair);
+            position:relative;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.04) inset,
+                0 30px 60px -20px rgba(0,0,0,0.7),
+                0 0 0 1px rgba(200,162,77,0.04);
+        }
+        .luxe-card::before{
+            content:"";
+            position:absolute; inset:0;
+            border-radius:inherit;
+            padding:1px;
+            background:linear-gradient(155deg, rgba(200,162,77,0.55), rgba(200,162,77,0) 30%, rgba(185,189,198,0.25) 70%, rgba(200,162,77,0.35));
+            -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite:xor;
+            mask-composite:exclude;
+            pointer-events:none;
+        }
+
+        .luxe-select{
+            background-color:var(--panel-2);
+            border:1px solid var(--hair);
+            color:var(--ivory);
+            appearance:none;
+            -webkit-appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23c8a24d' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat:no-repeat;
+            background-position:right 1rem center;
+        }
+        .luxe-select:focus{
+            outline:none;
+            border-color:var(--gold-dim);
+            box-shadow:0 0 0 3px rgba(200,162,77,0.12);
+        }
+        .luxe-select option{
+            background-color:#16161a;
+            color:var(--ivory);
+        }
+
+        /* Timer ring: conic progress in gold->silver, breathing glow while active */
+        .ring-wrap{
+            width:9.5rem; height:9.5rem;
+            border-radius:9999px;
+            padding:3px;
+            background:conic-gradient(var(--gold) 0deg, var(--gold-hi) var(--progress, 20deg), var(--hair) var(--progress, 20deg), var(--hair) 360deg);
+            transition:background 0.3s linear;
+        }
+        .ring-inner{
+            width:100%; height:100%;
+            border-radius:9999px;
+            background:radial-gradient(circle at 35% 25%, #1c1c21, #101013 70%);
+            border:1px solid rgba(200,162,77,0.25);
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            box-shadow:inset 0 0 30px rgba(0,0,0,0.6);
+        }
+        .breathing{
+            animation:breathe 2.6s ease-in-out infinite;
+        }
+        @keyframes breathe{
+            0%,100%{ box-shadow:0 0 0px rgba(200,162,77,0.0); }
+            50%{ box-shadow:0 0 26px rgba(200,162,77,0.28); }
+        }
+
+        .btn-gold{
+            background:linear-gradient(160deg, var(--gold-hi), var(--gold) 55%, var(--gold-dim));
+            color:#161208;
+            font-weight:600;
+            letter-spacing:0.04em;
+            box-shadow:0 8px 20px -8px rgba(200,162,77,0.6);
+            border:1px solid rgba(240,211,138,0.6);
+        }
+        .btn-gold:hover{ filter:brightness(1.06); }
+        .btn-gold:active{ transform:scale(0.97); }
+
+        .btn-ghost-amber{
+            background:rgba(200,162,77,0.08);
+            border:1px solid var(--gold-dim);
+            color:var(--gold-hi);
+            font-weight:500;
+        }
+        .btn-ghost-amber:hover{ background:rgba(200,162,77,0.14); }
+
+        .btn-ghost-silver{
+            background:rgba(185,189,198,0.05);
+            border:1px solid rgba(185,189,198,0.3);
+            color:var(--silver);
+            font-weight:500;
+        }
+        .btn-ghost-silver:hover{ background:rgba(185,189,198,0.1); color:var(--ivory); }
+
+        .stable-card{ min-height: 460px; display:flex; flex-direction:column; justify-content:space-between; }
+        .fixed-title{ min-height: 3rem; display:flex; align-items:center; justify-content:center; }
+        .fixed-desc{ min-height: 2.75rem; display:flex; align-items:center; justify-content:center; }
+
+        .fade-in{ animation:fadeIn 0.7s ease-out both; }
+        @keyframes fadeIn{
+            from{ opacity:0; transform:translateY(6px); }
+            to{ opacity:1; transform:translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: reduce){
+            .breathing, .fade-in{ animation:none; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <div class="max-w-md mx-auto w-full p-4 flex-grow flex flex-col justify-center">
+
+        <!-- Eyebrow / monogram -->
+        <div class="fade-in flex items-center justify-center gap-3 mb-5">
+            <div class="hairline w-10 sm:w-16"></div>
+            <span class="tracked-lg text-[10px] text-[var(--gold)] uppercase">Privát Gyógytorna Stúdió</span>
+            <div class="hairline w-10 sm:w-16"></div>
+        </div>
+
+        <h1 class="fade-in serif italic text-3xl text-center gold-text mb-6" style="font-weight:600;">Gyógytorna Időzítő</h1>
+
+        <!-- Válassza ki a gyakorlatot -->
+        <section class="fade-in luxe-card rounded-2xl p-4 mb-4">
+            <label for="exercise-select" class="block text-[10px] font-medium text-[var(--muted)] tracked uppercase mb-2">Válasszon gyakorlatot</label>
+            <select id="exercise-select" onchange="changeExercise()" class="luxe-select w-full p-3 rounded-xl text-sm font-medium">
+                <option value="0" selected>1. Medencebillentés (15 ismétlés)</option>
+                <option value="1">2. Macska-tehén póz (8 kör)</option>
+                <option value="2">3. Térdölelés / Váltott térdbehúzás (4 alkalom)</option>
+                <option value="3">4. Farizom és combhajlító nyújtás (3 alkalom)</option>
+                <option value="4">5. Háromnegyedes nyújtás / Gyermekpóz (60 mp)</option>
+            </select>
+        </section>
+
+        <!-- Fő Kártya -->
+        <main class="fade-in luxe-card rounded-2xl p-6 text-center relative overflow-hidden mb-4 stable-card">
+            <div>
+                <div id="status-label" class="text-[10px] font-semibold text-[var(--gold)] tracked uppercase mb-2">Készülj fel...</div>
+                <h2 id="action-title" class="serif text-lg font-semibold text-[var(--ivory)] mb-1 fixed-title px-1">Várjon a kezdésre</h2>
+                <p id="exercise-desc" class="text-xs text-[var(--muted)] mb-4 px-2 fixed-desc">Válassza ki a gyakorlatot, majd kattintson az Indítás gombra.</p>
+            </div>
+
+            <div class="hairline-solid w-16 mx-auto mb-4"></div>
+
+            <!-- Időzítő Kör -->
+            <div class="flex justify-center mb-4">
+                <div id="timer-container" class="ring-wrap">
+                    <div class="ring-inner">
+                        <span id="timer-display" class="serif text-4xl font-semibold text-[var(--ivory)]">3</span>
+                        <span id="sub-display" class="text-[10px] text-[var(--silver)] mt-1 tracked uppercase">mp</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ismétlés számláló -->
+            <div id="counter-box" class="text-sm font-medium text-[var(--silver)] mb-4 h-6 flex items-center justify-center">
+                <span id="current-count" class="text-[var(--gold-hi)] text-base font-semibold"></span>
+            </div>
+
+            <!-- Vezérlőgombok -->
+            <div class="flex gap-2 justify-center">
+                <button id="start-btn" onclick="startWorkout()" class="btn-gold px-6 py-2.5 rounded-xl transition transform active:scale-95">Indítás</button>
+                <button id="pause-btn" onclick="pauseWorkout()" class="btn-ghost-amber px-6 py-2.5 rounded-xl transition transform active:scale-95 hidden">Szünet</button>
+                <button onclick="resetWorkout()" class="btn-ghost-silver px-4 py-2.5 rounded-xl transition">Újra</button>
+            </div>
+        </main>
+    </div>
+
+    <footer class="fade-in text-center py-4">
+        <div class="hairline w-24 mx-auto mb-3"></div>
+        <p class="text-[10px] tracked text-[var(--muted)] uppercase">Gyógytorna Időzítő · Minden Gyakorlat Kész</p>
+    </footer>
+
+    <script>
+        const exercises = [
+            {
+                name: "Medencebillentés",
+                desc: "Belégzésre lazítson, majd kilégzésre finoman billentse hátrafelé a medencéjét (derekát nyomja a talajra).",
+                type: "reps",
+                reps: 15,
+                secondsPerRep: 4, 
+                upText: "⬇️ Kilégzés: Medencebillentés és tartás",
+                downText: "⬆️ Belégzés: Lassan engedje vissza"
+            },
+            {
+                name: "Macska-tehén póz",
+                desc: "Térdelőtámaszban. A jelzésre válts pozíciót, majd tartsd 4 másodpercig: 1. Kilégzés/Domborítás (Macska). 2. Belégzés/Homorítás (Tehén).",
+                type: "dual_reps",
+                reps: 8,
+                transitionSeconds: 1,
+                holdSeconds: 4,
+                catText: "🐈 Domboríts (Macska) — kilégzés, 4 mp tartás",
+                cowText: "🐄 Homoríts (Tehén) — belégzés, 4 mp tartás"
+            },
+            {
+                name: "Térdölelés / Váltott térdbehúzás",
+                desc: "Feküdjön hátra. A jelzésre váltson lábat, majd tartsa a behúzott térdet 10 másodpercig: 1. Jobb térd. 2. Bal térd.",
+                type: "dual_reps",
+                reps: 4,
+                transitionSeconds: 2,
+                holdSeconds: 10,
+                warnSeconds: 3,
+                catText: "➡️ Jobb térd behúzása és tartása (10 mp)",
+                cowText: "⬅️ Bal térd behúzása és tartása (10 mp)"
+            },
+            {
+                name: "Farizom és combhajlító nyújtás",
+                desc: "Húzza a jobb/bal térdét a mellkasához, fogja át alulról, majd nyújtsa a sarkát a plafon felé. A jelzésre válts lábat.",
+                type: "dual_reps",
+                reps: 3,
+                transitionSeconds: 2,
+                holdSeconds: 30,
+                catText: "⬆️ Jobb láb nyújtása (30 mp)",
+                cowText: "⬆️ Bal láb nyújtása (30 mp)"
+            },
+            {
+                name: "Háromnegyedes nyújtás / Gyermekpóz",
+                desc: "Térdelőtámaszból engedje hátra a fenekét a sarkára. Tartsa 60 másodpercig mély, hasi légzésekkel.",
+                type: "hold",
+                duration: 60
+            }
+        ];
+
+        let currentExIdx = 0; 
+        let state = 'IDLE'; 
+        let prepTimeLeft = 3;
+        let timeLeft = 0;
+        let timerInterval = null;
+        let audioCtx = null;
+        let lastSecondTriggered = -1;
+
+        const exerciseSelect = document.getElementById("exercise-select");
+        const statusLabel = document.getElementById("status-label");
+        const actionTitle = document.getElementById("action-title");
+        const exerciseDesc = document.getElementById("exercise-desc");
+        const timerDisplay = document.getElementById("timer-display");
+        const subDisplay = document.getElementById("sub-display");
+        const currentCountEl = document.getElementById("current-count");
+        const startBtn = document.getElementById("start-btn");
+        const pauseBtn = document.getElementById("pause-btn");
+        const timerContainer = document.getElementById("timer-container");
+
+        exerciseSelect.value = currentExIdx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type, duration) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.error("Audio hiba:", e);
+            }
+        }
+
+        function getSecondsPerRep(ex) {
+            if (ex.type === 'dual_reps') {
+                // Egy teljes kör = 2 fázis, mindegyik fázis = váltás/jelzés ideje + tényleges kitartás ideje.
+                // A váltás ideje SOHA nem számít bele a kitartásba.
+                return 2 * ((ex.transitionSeconds || 0) + ex.holdSeconds);
+            }
+            return ex.secondsPerRep;
+        }
+
+        function setRingProgress(fraction) {
+            const clamped = Math.max(0, Math.min(1, fraction));
+            timerContainer.style.setProperty('--progress', (clamped * 360) + 'deg');
+        }
+
+        function changeExercise() {
+            clearInterval(timerInterval);
+            currentExIdx = parseInt(exerciseSelect.value);
+            resetWorkout();
+        }
+
+        function updateUI() {
+            const ex = exercises[currentExIdx];
+            exerciseDesc.textContent = ex.desc;
+
+            timerContainer.classList.remove('breathing');
+            setRingProgress(0);
+
+            if (state === 'IDLE') {
+                statusLabel.textContent = "Készülj fel...";
+                actionTitle.textContent = "Kattintson az Indítás gombra";
+                timerDisplay.textContent = ex.type === 'hold' ? ex.duration : (ex.reps * getSecondsPerRep(ex));
+                subDisplay.textContent = "mp";
+                currentCountEl.textContent = "";
+            }
+        }
+
+        function startWorkout() {
+            initAudio();
+            if (state === 'IDLE' || state === 'PAUSED') {
+                if (state === 'IDLE') {
+                    prepTimeLeft = 3;
+                    setupExerciseTime();
+                }
+                startBtn.classList.add("hidden");
+                pauseBtn.classList.remove("hidden");
+                timerContainer.classList.add('breathing');
+
+                if (state === 'IDLE' || prepTimeLeft > 0) {
+                    state = 'PREPARE';
+                    runPrepareCountdown();
+                } else {
+                    runActiveLoop();
+                }
+            }
+        }
+
+        function setupExerciseTime() {
+            const ex = exercises[currentExIdx];
+            if (ex.type === 'hold') {
+                timeLeft = ex.duration;
+            } else {
+                timeLeft = ex.reps * getSecondsPerRep(ex);
+            }
+        }
+
+        function runPrepareCountdown() {
+            statusLabel.textContent = "Készülj fel a feladatra...";
+            actionTitle.textContent = exercises[currentExIdx].name;
+            currentCountEl.textContent = "";
+            timerDisplay.textContent = prepTimeLeft;
+            subDisplay.textContent = "mp";
+            setRingProgress(0);
+            playTone(440, 'sine', 0.12);
+
+            timerInterval = setInterval(() => {
+                prepTimeLeft--;
+                if (prepTimeLeft > 0) {
+                    timerDisplay.textContent = prepTimeLeft;
+                    playTone(440, 'sine', 0.12);
+                } else {
+                    clearInterval(timerInterval);
+                    prepTimeLeft = 3; 
+                    state = 'ACTIVE';
+                    lastSecondTriggered = -1;
+                    playTone(250, 'triangle', 0.25);
+                    runActiveLoop();
+                }
+            }, 1000);
+        }
+
+        function runActiveLoop() {
+            const ex = exercises[currentExIdx];
+            statusLabel.textContent = ex.type === 'hold' ? "Kitartás / Levezetés" : "Gyakorlat folyamatban";
+            subDisplay.textContent = "mp";
+
+            let totalDuration = ex.type === 'hold' ? ex.duration : (ex.reps * getSecondsPerRep(ex));
+            let elapsed = totalDuration - timeLeft;
+            updateActiveState(elapsed);
+            setRingProgress(elapsed / totalDuration);
+
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    elapsed++;
+                    updateActiveState(elapsed);
+                    setRingProgress(elapsed / totalDuration);
+                } else {
+                    clearInterval(timerInterval);
+                    playTone(880, 'triangle', 0.5);
+                    
+                    state = 'FINISHED';
+                    statusLabel.textContent = "Gratulálok!";
+                    actionTitle.textContent = "Sikeresen teljesítve!";
+                    timerDisplay.textContent = "Kész";
+                    subDisplay.textContent = "";
+                    currentCountEl.textContent = "";
+                    startBtn.classList.remove("hidden");
+                    pauseBtn.classList.add("hidden");
+                    startBtn.textContent = "Újraindítás";
+                    timerContainer.classList.remove('breathing');
+                    setRingProgress(1);
+                }
+            }, 1000);
+        }
+
+        function updateActiveState(elapsed) {
+            const ex = exercises[currentExIdx];
+            if (ex.type === 'reps') {
+                let cyclePos = elapsed % ex.secondsPerRep;
+                let currentRep = Math.floor(elapsed / ex.secondsPerRep) + 1;
+                if (currentRep > ex.reps) currentRep = ex.reps;
+                currentCountEl.textContent = `${currentRep}. / ${ex.reps} ismétlés`;
+                timerDisplay.textContent = timeLeft;
+
+                if (cyclePos === 0) {
+                    actionTitle.textContent = ex.upText;
+                    if (elapsed > 0 && cyclePos !== lastSecondTriggered) {
+                        playTone(250, 'triangle', 0.25);
+                    }
+                } else if (cyclePos === 3) {
+                    actionTitle.textContent = ex.downText;
+                    if (cyclePos !== lastSecondTriggered) {
+                        playTone(650, 'sine', 0.25);
+                    }
+                }
+                lastSecondTriggered = cyclePos;
+
+            } else if (ex.type === 'dual_reps') {
+                const transitionSeconds = ex.transitionSeconds || 0;
+                const holdSeconds = ex.holdSeconds;
+                const halfTime = transitionSeconds + holdSeconds;
+                const secondsPerRep = halfTime * 2;
+
+                let cyclePos = elapsed % secondsPerRep;
+                let currentRep = Math.floor(elapsed / secondsPerRep) + 1;
+                if (currentRep > ex.reps) currentRep = ex.reps;
+                currentCountEl.textContent = `${currentRep}. / ${ex.reps} kör`;
+                timerDisplay.textContent = timeLeft;
+
+                const isFirstHalf = cyclePos < halfTime;
+                const posInHalf = isFirstHalf ? cyclePos : cyclePos - halfTime;
+                const phaseText = isFirstHalf ? ex.catText : ex.cowText;
+                const transitionBeepFreq = isFirstHalf ? 250 : 650;
+
+                if (posInHalf < transitionSeconds) {
+                    // Váltás / felkészülés ideje — EZ NEM számít bele a kitartás másodperceibe.
+                    actionTitle.textContent = `🔁 Váltás — készülj: ${phaseText}`;
+                    subDisplay.textContent = "váltás";
+                    if (posInHalf === 0 && elapsed > 0 && cyclePos !== lastSecondTriggered) {
+                        playTone(transitionBeepFreq, 'triangle', 0.25);
+                    }
+                } else {
+                    // Tényleges, teljes hosszú kitartás — jelzés nélkül, csak a végén rövid figyelmeztetéssel
+                    // (csak akkor, ha a kitartás elég hosszú ahhoz, hogy ez ne legyen "végig pittyegés").
+                    actionTitle.textContent = phaseText;
+                    subDisplay.textContent = "mp";
+                    if (posInHalf === transitionSeconds && cyclePos !== lastSecondTriggered) {
+                        playTone(transitionBeepFreq, 'triangle', 0.25);
+                    }
+                    const posInHold = posInHalf - transitionSeconds;
+                    const holdRemaining = holdSeconds - posInHold;
+                    const warnWindow = ex.warnSeconds || 5;
+                    if (holdSeconds > warnWindow && holdRemaining <= warnWindow && holdRemaining > 0 && cyclePos !== lastSecondTriggered) {
+                        playTone(440, 'sine', 0.1);
+                    }
+                }
+
+                lastSecondTriggered = cyclePos;
+
+            } else if (ex.type === 'hold') {
+                actionTitle.textContent = "🧘 Háromnegyedes nyújtás / Gyermekpóz";
+                timerDisplay.textContent = timeLeft;
+                
+                if (timeLeft <= 5 && timeLeft > 0) {
+                    currentCountEl.textContent = `⚠️ Mindjárt vége!`;
+                    if (timeLeft !== lastSecondTriggered) {
+                        playTone(440, 'sine', 0.12);
+                        lastSecondTriggered = timeLeft;
+                    }
+                } else {
+                    currentCountEl.textContent = "";
+                }
+            }
+        }
+
+        function pauseWorkout() {
+            clearInterval(timerInterval);
+            state = 'PAUSED';
+            startBtn.classList.remove("hidden");
+            pauseBtn.classList.add("hidden");
+            startBtn.textContent = "Folytatás";
+            statusLabel.textContent = "Szüneteltetve";
+            timerContainer.classList.remove('breathing');
+        }
+
+        function resetWorkout() {
+            clearInterval(timerInterval);
+            state = 'IDLE';
+            prepTimeLeft = 3;
+            lastSecondTriggered = -1;
+            startBtn.classList.remove("hidden");
+            pauseBtn.classList.add("hidden");
+            startBtn.textContent = "Indítás";
+            timerContainer.classList.remove('breathing');
+            updateUI();
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
